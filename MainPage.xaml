@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SonastikMAUI.MainPage">
+    <StackLayout>
+        <CarouselView ItemsSource="{Binding WordCards}">
+            <CarouselView.ItemTemplate>
+                <DataTemplate>
+                    <Frame x:Name="CardFrame" WidthRequest="200" HeightRequest="300" CornerRadius="10" Padding="20" HasShadow="True">
+                        <StackLayout VerticalOptions="Center">
+                            <Label x:Name="FrontLabel" Text="{Binding EstonianWord}" IsVisible="True" FontSize="Large" HorizontalOptions="Center" TextColor="Black"/>
+                            <Label x:Name="BackLabel" Text="{Binding RussianWord}" IsVisible="False" FontSize="Large" HorizontalOptions="Center" TextColor="Black"/>
+                            <Button Text="Flip" Command="{Binding Path=BindingContext.FlipCommand, Source={x:Reference MainPage}}" CommandParameter="{Binding Source={x:Reference CardFrame}}" HorizontalOptions="Center" />
+                        </StackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CarouselView.ItemTemplate>
+        </CarouselView>
+
+        <Button Text="Add Word" Clicked="AddWord_Clicked" HorizontalOptions="Center" />
+        <Button Text="Remove Word" Clicked="RemoveWord_Clicked" HorizontalOptions="Center" />
+        <Button Text="Change Word" Clicked="ChangeWord_Clicked" HorizontalOptions="Center" />
+    </StackLayout>
+</ContentPage>
