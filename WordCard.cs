@@ -4,10 +4,8 @@ public class WordCard : INotifyPropertyChanged
 {
     public WordCard()
     {
-        EstonianWord = "Tere";
-        RussianWord = "Привет";
+
         IsFlipped = false;
-        FrontLabelText = EstonianWord;
     }
 
     private string estonianWord;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -15,13 +16,20 @@ namespace SonastikMAUI
         {
             InitializeComponent();
 
-            // Load word cards from file
             WordCards = LoadWordCardsFromFile();
             BindingContext = this;
 
         }
+        private void UpdateWordCards()
+        {
+            WordCards.Clear();
+            ObservableCollection<WordCard> updatedWordCards = LoadWordCardsFromFile();
+            foreach (var wordCard in updatedWordCards)
+            {
+                WordCards.Add(wordCard);
+            }
+        }
 
-        // Load word cards from file
         private ObservableCollection<WordCard> LoadWordCardsFromFile()
         {
             ObservableCollection<WordCard> wordCards = new ObservableCollection<WordCard>();
@@ -38,7 +46,9 @@ namespace SonastikMAUI
                         string[] words = line.Split(' ');
                         if (words.Length == 2)
                         {
-                            wordCards.Add(new WordCard { EstonianWord = words[0], RussianWord = words[1], IsFlipped = false });
+                            WordCard card = new WordCard { EstonianWord = words[0], RussianWord = words[1], IsFlipped = false };
+                            card.FrontLabelText = card.EstonianWord;
+                            wordCards.Add(card);
                         }
                         else
                         {
@@ -51,7 +61,6 @@ namespace SonastikMAUI
                     Console.WriteLine("File does not exist: " + filePath);
                 }
 
-                // Добавляем карточку без указания слов, чтобы установить текст по умолчанию
                 wordCards.Add(new WordCard { IsFlipped = false });
             }
             catch (Exception ex)
@@ -63,6 +72,7 @@ namespace SonastikMAUI
         }
 
 
+
         private async void FlipButton_Clicked(object sender, EventArgs e)
         {
             if (sender is Button button && button.CommandParameter is Frame frame && frame.BindingContext is WordCard wordCard)
@@ -70,26 +80,26 @@ namespace SonastikMAUI
                 Label frontLabel = frame.FindByName<Label>("FrontLabel");
                 Label backLabel = frame.FindByName<Label>("BackLabel");
 
-                // Переключаем значения видимости меток и текста в зависимости от того, перевернута ли карточка
                 if (!wordCard.IsFlipped)
-                {
-                    frontLabel.IsVisible = false;
-                    backLabel.IsVisible = true;
-                    frontLabel.Text = wordCard.EstonianWord;
-                    backLabel.Text = wordCard.RussianWord;
-                }
-                else
                 {
                     frontLabel.IsVisible = true;
                     backLabel.IsVisible = false;
-                    frontLabel.Text = wordCard.EstonianWord; // Устанавливаем эстонское слово в метку FrontLabel
-                    backLabel.Text = wordCard.RussianWord;
                 }
+                else
+                {
+                    frontLabel.IsVisible = false;
+                    backLabel.IsVisible = true;
+                }
+
+
+
+                await FlipCardAnimation(frame);
+
+                frontLabel.Text = wordCard.EstonianWord;
 
                 wordCard.IsFlipped = !wordCard.IsFlipped;
             }
         }
-
 
 
         private async Task FlipCardAnimation(Frame cardFrame)
@@ -98,7 +108,7 @@ namespace SonastikMAUI
             {
                 await cardFrame.RotateYTo(-115, 250, Easing.Linear);
 
-                await Task.Delay(100); // Delay for better animation effect
+                await Task.Delay(50);
 
                 await cardFrame.RotateYTo(0, 250, Easing.Linear);
             }
@@ -108,35 +118,51 @@ namespace SonastikMAUI
             }
         }
 
-        // Add a new word card with custom Estonian and Russian words
         private async void AddWord_Clicked(object sender, EventArgs e)
         {
-            // Предложить пользователю ввести эстонское и русское слова
             string estonianWord = await DisplayPromptAsync("Enter Estonian Word", "Please enter the Estonian word:");
+            if (!estonianWord.All(c => "qwertyuiopasdfghjklzxcvbnmüõöäQWERTYUIOPASDFGHJKLZXCVBNMÜÕÖÄ".Contains(c)))
+            {
+                await DisplayAlert("Error", "Invalid characters in Estonian word.", "OK");
+                return;
+            }
             string russianWord = await DisplayPromptAsync("Enter Russian Word", "Please enter the Russian word:");
+            if (!russianWord.All(c => "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ".Contains(c)))
+            {
+                await DisplayAlert("Error", "Invalid characters in Russian word.", "OK");
+                return;
+            }
 
-            // Проверить, что оба слова были введены
             if (string.IsNullOrWhiteSpace(estonianWord) || string.IsNullOrWhiteSpace(russianWord))
             {
                 await DisplayAlert("Error", "Both Estonian and Russian words are required.", "OK");
                 return;
             }
+            WordCard newWordCard = new WordCard { EstonianWord = estonianWord, RussianWord = russianWord, IsFlipped = false };
+            WordCards.Add(newWordCard);
 
-            // Добавить новую карточку со словами
-            WordCards.Add(new WordCard { EstonianWord = estonianWord, RussianWord = russianWord, IsFlipped = false });
+            try
+            {
+                string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "word_cards.txt");
+                using (StreamWriter writer = File.AppendText(filePath))
+                {
+                    writer.WriteLine($"{estonianWord} {russianWord}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error", "An error occurred while saving the word to file: " + ex.Message, "OK");
+            }
         }
-        // Change the last word card by selecting from a list of words loaded from a text file
-        // Change the last word card by selecting from a list of words loaded from a text file
+
         private async void ChangeWord_Clicked(object sender, EventArgs e)
         {
             if (WordCards.Count > 0)
             {
-                // Get the last added word card
                 var wordCard = WordCards[WordCards.Count - 1];
 
                 try
                 {
-                    // Load words from the text file
                     string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "word_cards.txt");
                     if (!File.Exists(filePath))
                     {
@@ -144,15 +170,12 @@ namespace SonastikMAUI
                         return;
                     }
 
-                    // Read all lines from the file
                     string[] lines = File.ReadAllLines(filePath);
 
-                    // Show the list of words to the user and let them choose
                     string selectedWord = await DisplayActionSheet("Select Word", "Cancel", null, lines);
                     if (selectedWord == "Cancel" || string.IsNullOrWhiteSpace(selectedWord))
                         return;
 
-                    // Split the selected word into Estonian and Russian words
                     string[] words = selectedWord.Split(' ');
                     if (words.Length != 2)
                     {
@@ -160,35 +183,94 @@ namespace SonastikMAUI
                         return;
                     }
 
-                    // Prompt the user to enter new words for replacement
                     string newEstonianWord = await DisplayPromptAsync("Enter New Estonian Word", "Please enter the new Estonian word:", initialValue: words[0]);
-                    string newRussianWord = await DisplayPromptAsync("Enter New Russian Word", "Please enter the new Russian word:", initialValue: words[1]);
-
-                    // Check if both new words are entered
-                    if (string.IsNullOrWhiteSpace(newEstonianWord) || string.IsNullOrWhiteSpace(newRussianWord))
+                    if (string.IsNullOrWhiteSpace(newEstonianWord) || !newEstonianWord.All(c => "qwertyuiopasdfghjklzxcvbnmüõöäQWERTYUIOPASDFGHJKLZXCVBNMÜÕÖÄ".Contains(c)))
                     {
-                        await DisplayAlert("Error", "Both Estonian and Russian words are required.", "OK");
+                        await DisplayAlert("Error", "There is mistake entering new estonian word.", "OK");
                         return;
                     }
 
-                    // Update the word card with the new words
+                    string newRussianWord = await DisplayPromptAsync("Enter New Russian Word", "Please enter the new Russian word:", initialValue: words[1]);
+                    if (string.IsNullOrWhiteSpace(newRussianWord) || !newRussianWord.All(c => "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ".Contains(c)))
+                    {
+                        await DisplayAlert("Error", "There is mistake entering new russian word.", "OK");
+                        ChangeWord_Clicked(sender, e);
+                        return;
+                    }
+
                     wordCard.EstonianWord = newEstonianWord;
                     wordCard.RussianWord = newRussianWord;
+
+                    string oldLine = $"{words[0]} {words[1]}";
+                    string newLine = $"{newEstonianWord} {newRussianWord}";
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        if (lines[i] == oldLine)
+                        {
+                            lines[i] = newLine;
+                            break;
+                        }
+                    }
+
+                    File.WriteAllLines(filePath, lines);
+
+                    UpdateWordCards();
+
+                    if (!lines.Contains(newLine))
+                    {
+                        using (StreamWriter writer = File.AppendText(filePath))
+                        {
+                            writer.WriteLine(newLine);
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
-                    await DisplayAlert("Error", "An error occurred while loading words: " + ex.Message, "OK");
+                    await DisplayAlert("Error", "An error occurred while updating the word: " + ex.Message, "OK");
                 }
             }
         }
 
 
 
-        // Remove the last word card
-        private void RemoveWord_Clicked(object sender, EventArgs e)
+        private async void RemoveWord_Clicked(object sender, EventArgs e)
         {
+            string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "word_cards.txt");
             if (WordCards.Count > 0)
-                WordCards.RemoveAt(WordCards.Count - 1);
+            {
+                string[] wordList = File.ReadAllLines(filePath);
+
+                string selectedWord = await DisplayActionSheet("Select Word to Remove", "Cancel", null, wordList);
+
+                if (selectedWord == "Cancel" || string.IsNullOrWhiteSpace(selectedWord))
+                    return;
+
+                string[] words = selectedWord.Split(new string[] { " - " }, StringSplitOptions.None);
+
+                WordCard removedWord = WordCards.FirstOrDefault(card => card.EstonianWord == words[0] && card.RussianWord == words[1]);
+
+                if (removedWord != null)
+                {
+                    WordCards.Remove(removedWord);
+
+                    try
+                    {
+                        string[] lines = File.ReadAllLines(filePath);
+                        string removedLine = $"{removedWord.EstonianWord} {removedWord.RussianWord}";
+
+                        lines = lines.Where(line => line.Trim() != removedLine.Trim()).ToArray();
+                        File.WriteAllLines(filePath, lines);
+                    }
+                    catch (Exception ex)
+                    {
+                        await DisplayAlert("Error", "An error occurred while removing the word from file: " + ex.Message, "OK");
+                    }
+                }
+                else
+                {
+                    await DisplayAlert("Error", "Selected word not found.", "OK");
+                }
+            }
         }
     }
 }
