@@ -50,22 +50,18 @@ namespace SonastikMAUI
                             card.FrontLabelText = card.EstonianWord;
                             wordCards.Add(card);
                         }
-                        else
-                        {
-                            Console.WriteLine($"Skipping line: {line}. Expected format: <EstonianWord> <RussianWord>");
-                        }
                     }
                 }
                 else
                 {
-                    Console.WriteLine("File does not exist: " + filePath);
+                    Console.WriteLine("Faili ei ole olemas: " + filePath);
                 }
 
                 wordCards.Add(new WordCard { IsFlipped = false });
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error loading word cards: " + ex.Message);
+                Console.WriteLine("Viga sõnakaartide laadimisel: " + ex.Message);
             }
 
             return wordCards;
@@ -114,28 +110,28 @@ namespace SonastikMAUI
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error during flip animation: " + ex.Message);
+                Console.WriteLine("Viga pööramisanimatsiooni ajal: " + ex.Message);
             }
         }
 
         private async void AddWord_Clicked(object sender, EventArgs e)
         {
-            string estonianWord = await DisplayPromptAsync("Enter Estonian Word", "Please enter the Estonian word:");
-            if (!estonianWord.All(c => "qwertyuiopasdfghjklzxcvbnmüõöäQWERTYUIOPASDFGHJKLZXCVBNMÜÕÖÄ".Contains(c)))
+            string estonianWord = await DisplayPromptAsync("Sisesta eesti sõna", "Palun sisesta eestikeelne sõna:");
+            if (string.IsNullOrWhiteSpace(estonianWord) || !estonianWord.All(c => "qwertyuiopasdfghjklzxcvbnmüõöäQWERTYUIOPASDFGHJKLZXCVBNMÜÕÖÄ1234567890".Contains(c)))
             {
-                await DisplayAlert("Error", "Invalid characters in Estonian word.", "OK");
+                await DisplayAlert("Viga", "Eestikeelses sõnas vigased märgid.", "OK");
                 return;
             }
-            string russianWord = await DisplayPromptAsync("Enter Russian Word", "Please enter the Russian word:");
-            if (!russianWord.All(c => "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ".Contains(c)))
+            string russianWord = await DisplayPromptAsync("Sisestage vene sõna", "Palun sisestage venekeelne sõna:");
+            if (string.IsNullOrWhiteSpace(russianWord) || !russianWord.All(c => "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ1234567890".Contains(c)))
             {
-                await DisplayAlert("Error", "Invalid characters in Russian word.", "OK");
+                await DisplayAlert("Viga", "Venekeelses sõnas on kehtetud tähemärgid.", "OK");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(estonianWord) || string.IsNullOrWhiteSpace(russianWord))
             {
-                await DisplayAlert("Error", "Both Estonian and Russian words are required.", "OK");
+                await DisplayAlert("Viga", "Nõutavad on nii eesti kui ka vene sõnad.", "OK");
                 return;
             }
             WordCard newWordCard = new WordCard { EstonianWord = estonianWord, RussianWord = russianWord, IsFlipped = false };
@@ -151,7 +147,7 @@ namespace SonastikMAUI
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Error", "An error occurred while saving the word to file: " + ex.Message, "OK");
+                await DisplayAlert("Viga", "Sõna faili salvestamisel ilmnes viga: " + ex.Message, "OK");
             }
         }
 
@@ -166,34 +162,34 @@ namespace SonastikMAUI
                     string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "word_cards.txt");
                     if (!File.Exists(filePath))
                     {
-                        await DisplayAlert("Error", "Word list file does not exist.", "OK");
+                        await DisplayAlert("Viga", "Sõnade loendi faili pole olemas.", "OK");
                         return;
                     }
 
                     string[] lines = File.ReadAllLines(filePath);
 
-                    string selectedWord = await DisplayActionSheet("Select Word", "Cancel", null, lines);
-                    if (selectedWord == "Cancel" || string.IsNullOrWhiteSpace(selectedWord))
+                    string selectedWord = await DisplayActionSheet("Valige Sõna", "Loobu", null, lines);
+                    if (selectedWord == "Loobu" || string.IsNullOrWhiteSpace(selectedWord))
                         return;
 
                     string[] words = selectedWord.Split(' ');
                     if (words.Length != 2)
                     {
-                        await DisplayAlert("Error", "Invalid format of word in the list.", "OK");
+                        await DisplayAlert("Viga", "Loendis oleva sõna vorming on vale.", "OK");
                         return;
                     }
 
-                    string newEstonianWord = await DisplayPromptAsync("Enter New Estonian Word", "Please enter the new Estonian word:", initialValue: words[0]);
-                    if (string.IsNullOrWhiteSpace(newEstonianWord) || !newEstonianWord.All(c => "qwertyuiopasdfghjklzxcvbnmüõöäQWERTYUIOPASDFGHJKLZXCVBNMÜÕÖÄ".Contains(c)))
+                    string newEstonianWord = await DisplayPromptAsync("Sisestage uus eesti sõna", "Palun sisestage uus eestikeelne sõna:", initialValue: words[0]);
+                    if (string.IsNullOrWhiteSpace(newEstonianWord) || !newEstonianWord.All(c => "qwertyuiopasdfghjklzxcvbnmüõöäQWERTYUIOPASDFGHJKLZXCVBNMÜÕÖÄ1234567890".Contains(c)))
                     {
-                        await DisplayAlert("Error", "There is mistake entering new estonian word.", "OK");
+                        await DisplayAlert("Viga", "Uue eestikeelse sõna sisestamisel on viga.", "OK");
                         return;
                     }
 
-                    string newRussianWord = await DisplayPromptAsync("Enter New Russian Word", "Please enter the new Russian word:", initialValue: words[1]);
-                    if (string.IsNullOrWhiteSpace(newRussianWord) || !newRussianWord.All(c => "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ".Contains(c)))
+                    string newRussianWord = await DisplayPromptAsync("Sisestage uus vene sõna", "Palun sisestage uus venekeelne sõna:", initialValue: words[1]);
+                    if (string.IsNullOrWhiteSpace(newRussianWord) || !newRussianWord.All(c => "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ1234567890".Contains(c)))
                     {
-                        await DisplayAlert("Error", "There is mistake entering new russian word.", "OK");
+                        await DisplayAlert("Viga", "Uue venekeelse sõna sisestamisel on viga.", "OK");
                         ChangeWord_Clicked(sender, e);
                         return;
                     }
@@ -226,12 +222,10 @@ namespace SonastikMAUI
                 }
                 catch (Exception ex)
                 {
-                    await DisplayAlert("Error", "An error occurred while updating the word: " + ex.Message, "OK");
+                    await DisplayAlert("Viga", "Sõna värskendamisel ilmnes viga: " + ex.Message, "OK");
                 }
             }
         }
-
-
 
         private async void RemoveWord_Clicked(object sender, EventArgs e)
         {
@@ -240,12 +234,12 @@ namespace SonastikMAUI
             {
                 string[] wordList = File.ReadAllLines(filePath);
 
-                string selectedWord = await DisplayActionSheet("Select Word to Remove", "Cancel", null, wordList);
+                string selectedWord = await DisplayActionSheet("Valige eemaldatav Sõna", "Loobu", null, wordList);
 
-                if (selectedWord == "Cancel" || string.IsNullOrWhiteSpace(selectedWord))
+                if (selectedWord == "Loobu" || string.IsNullOrWhiteSpace(selectedWord))
                     return;
 
-                string[] words = selectedWord.Split(new string[] { " - " }, StringSplitOptions.None);
+                string[] words = selectedWord.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
 
                 WordCard removedWord = WordCards.FirstOrDefault(card => card.EstonianWord == words[0] && card.RussianWord == words[1]);
 
@@ -263,12 +257,12 @@ namespace SonastikMAUI
                     }
                     catch (Exception ex)
                     {
-                        await DisplayAlert("Error", "An error occurred while removing the word from file: " + ex.Message, "OK");
+                        await DisplayAlert("Viga", "Sõna failist eemaldamisel ilmnes viga: " + ex.Message, "OK");
                     }
                 }
                 else
                 {
-                    await DisplayAlert("Error", "Selected word not found.", "OK");
+                    await DisplayAlert("Viga", "Valitud sõna ei leitud.", "OK");
                 }
             }
         }

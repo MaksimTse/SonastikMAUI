@@ -17,8 +17,8 @@
             </CarouselView.ItemTemplate>
         </CarouselView>
 
-        <Button Text="Add Word" Clicked="AddWord_Clicked" HorizontalOptions="Center" />
-        <Button Text="Remove Word" Clicked="RemoveWord_Clicked" HorizontalOptions="Center" />
-        <Button Text="Change Word" Clicked="ChangeWord_Clicked" HorizontalOptions="Center" />
+        <Button Text="Lisa Sõna" Clicked="AddWord_Clicked" HorizontalOptions="Center" />
+        <Button Text="Kustuta Sõna" Clicked="RemoveWord_Clicked" HorizontalOptions="Center" />
+        <Button Text="Muuda Sõna" Clicked="ChangeWord_Clicked" HorizontalOptions="Center" />
     </StackLayout>
 </ContentPage>
